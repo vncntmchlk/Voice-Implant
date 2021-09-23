@@ -1,85 +1,50 @@
 //create a monitoring bus for the descriptors
-b = Bus.new(\control,0,150);
+// b = Bus.new(\control,0,150);
 
 //create a monitoring window for the values
-
-(
-w = Window("Mel Bands Monitor", Rect(0, 0, 600, 600), false, false).front;
-w.alpha = 0.7;
-a = MultiSliderView(w,Rect(0, 0, 300, 600)).elasticMode_(1).isFilled_(1)
+~gui = ();
+~gui.win = Window("Mel Bands Monitor", Rect(0, 0, 600, 600), false, true).front;
+// w.alpha = 0.7;
+~gui.voiceView = MultiSliderView(~gui.win,Rect(0, 0, 300, 600)).elasticMode_(1).isFilled_(1)
 .indexIsHorizontal_(false)
 .drawLines_(true)
 .drawRects_(false)
 .readOnly_(true);
+~gui.voiceView.strokeColor = Color.gray(0, 1);
+~gui.voiceView.fillColor = Color.gray(0, 1);
+~gui.voiceView.background = Color.gray(1, 1);
 
-g = MultiSliderView(w,Rect(300, 0, 300, 600)).elasticMode_(1).isFilled_(1)
+~gui.electronicsView = MultiSliderView(~gui.win,Rect(300, 0, 300, 600)).elasticMode_(1).isFilled_(1)
 .indexIsHorizontal_(false)
 .drawLines_(true)
 .drawRects_(false)
 .readOnly_(true);
-)
-a.drawRects = false
+~gui.electronicsView.strokeColor = Color.gray(1, 1);
+~gui.electronicsView.fillColor = Color.gray(0, 1);
+~gui.electronicsView.background = Color.gray(1, 1);
+
+// a.drawRects = false
 
 //run the window updating routine.
-(
-~winRange = 0.1;
-~frameRate = (1/60);
-r = Routine {
-    {
-        b.get({ arg val;
-            {
-                if(w.isClosed.not) {
-					a.value = (0.1 - val)/~winRange;
-					g.value = val / ~winRange
-                }
-            }.defer
-        });
-        ~frameRate.wait;
-    }.loop
-}.play
-)
 
-//play a simple sound to observe the values
-(
-x =     {
-    var source = SinOsc.ar(LFTri.kr(0.1).exprange(80,8000),0,0.1);
-    Out.kr(b,FluidMelBands.kr(source,maxNumBands:150));
-    source.dup;
+~gui.winRange = 0.05;
+~gui.frameRate = (1/25);
+~gui.updateWindow = Routine {
+	{
+		v.melBus.get({ arg val;
+			{
+				if(~gui.win.isClosed.not) {
+					~gui.electronicsView.value = val[..v.numBands] / ~gui.winRange
+				}
+			}.defer
+		});
+		v.visBus.get({ arg val;
+			{
+				if(~gui.win.isClosed.not) {
+					~gui.voiceView.value = (~gui.winRange - val[..v.numBands])/~gui.winRange;
+				}
+			}.defer
+		});
+		~gui.frameRate.wait;
+	}.loop
 }.play;
-)
-
-// free this source
-x.free
-
-// load a more exciting one
-c = Buffer.read(s,File.realpath(FluidMelBands.class.filenameSymbol).dirname.withTrailingSlash ++ "../AudioFiles/Tremblay-AaS-SynthTwoVoices-M.wav");
-
-// analyse with parameters to be changed
-(
-x =     {arg bands = 150, low = 20, high = 20000;
-    var source = PlayBuf.ar(1,c,loop:1);
-    Out.kr(b,FluidMelBands.kr(source, bands, low, high, 40) / 10);
-    source.dup;
-}.play;
-)
-
-//set the winRange to a more informative value
-~winRange = 0.05;
-
-// observe the number of bands. The unused ones at the top are not updated
-x.set(\bands,20)
-
-// back to thefull range
-x.set(\bands,150)
-
-// focus all the bands on a mid range: nothing to see!
-x.set(\low,320, \high, 800)
-
-// focusing on the low end shows the fft resolution issue. One could restart the analysis with a larger fft to show more precision
-x.set(\low,20, \high, 160)
-
-// back to full range
-x.set(\low,20, \high, 20000)
-
-// free everything
-x.free;b.free;c.free;r.stop;
