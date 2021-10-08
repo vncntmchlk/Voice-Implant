@@ -31,10 +31,11 @@ SynthDef(\loopSynth, {
 	var orig = In.kr(\melBus.ir(), ~maxBands);
 	var phase = In.ar(\phaseBus.ir(), 1);
 	var controlSig = PlayBuf.kr(1, \controlLoopBuf.kr(), \loopSpeed.kr(1), loop: 1);
+	var loopStartLfo = SinOsc.kr(1/4).range(-150,0);
 	var loop = BufRd.kr(
 		~maxBands,
 		\melBuf.ir(),
-		Gate.ar(phase,1 - \freeze.kr(0)) + LinLin.kr(controlSig,0,1,\loopStart.kr(-400),0)
+		Gate.ar(phase,1 - \freeze.kr(0)) + LinLin.kr(controlSig,0,1,\loopStart.kr(-400) + loopStartLfo, 0)
 	);
 	var mix = SelectX.kr(\mbSelect.kr(0),[orig, loop]);
 	Out.kr(\loopBus.ir(), mix);
