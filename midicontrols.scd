@@ -3,26 +3,33 @@ if(MIDIClient.initialized.not){
 	MIDIIn.connect(0, MIDIClient.sources.select{|m| m.name == "VirMIDI 0-0"}[0]);
 };
 ~midiStates = (
+	lfoSpeeds: [0.25, 0.5, 1, 2, 4],
 	vFreeze: false,
 	vlastRand: 0,
 	vSynthNumList: [10, 14, 20, 28, 36, 120],
 	vSynthListIndex: 0,
+	vSwitchState: true,
+	vTrueState: (freqMult: 1),
+	vFalseState: (freqMult: 0.5),
+	vLfoIndex: 2,
 	qFreeze: false,
 	qlastRand: 0,
 	qSynthNumList: [10, 14, 20, 28, 36, 120],
 	qSynthListIndex: 0,
+	qSwitchState: true,
+	qTrueState: (freqMult: 2, minFreq: 250, maxFreq: 880),
+	qFalseState: (freqMult: 0.5, minFreq: 880, maxFreq: 7000),
+	qLfoIndex: 2,
 	cue: 0
 );
-~cuesList = Order.new(size: 20);
-~cuesList[0] = {v.startSynths(10)};
-~cuesList[1] = {v.startSynths(14.postln)};
-~cuesList[2] = {v.startSynths(20.postln)};
-~cuesList[3] = {v.startSynths(28.postln)};
-~cuesList[4] = {v.startSynths(36.postln)};
-~cuesList[5] = {v.startSynths(120.postln)};
+
 ~cueActions = (
-	1: {~midiStates.cue = (~midiStates.cue - 1).clip(0,20); ~cuesList[~midiStates.cue].value},
-	2: {~midiStates.cue = (~midiStates.cue + 1).clip(0,20); ~cuesList[~midiStates.cue].value},
+	1: {~midiStates.cue = (~midiStates.cue - 1).clip(0,20); ~cuesList[~midiStates.cue].value;
+		{~cueText.string = "CUE: " ++ (~midiStates.cue + 1)}.defer;
+	},
+	2: {~midiStates.cue = (~midiStates.cue + 1).clip(0,20); ~cuesList[~midiStates.cue].value;
+		{~cueText.string = "CUE: " ++ (~midiStates.cue + 1)}.defer;
+	},
 	10: {
 		~midiStates.vSynthListIndex = (~midiStates.vSynthListIndex + 1).clip(0, 5);
 		v.startSynths(~midiStates.vSynthNumList[~midiStates.vSynthListIndex])
@@ -35,6 +42,24 @@ if(MIDIClient.initialized.not){
 		~midiStates.vFreeze = ~midiStates.vFreeze.not;
 		("FREEZE V " ++ (~midiStates.vFreeze.asString)).postln;
 		v.loopSynth.set(\freeze, ~midiStates.vFreeze.asInteger);
+		{~loopST1Button.valueAction = ~midiStates.vFreeze.asInteger}.defer;
+	},
+	/*	13: {
+	~midiStates.vSwitchState = ~midiStates.vSwitchState.not;
+	if(~midiStates.vSwitchState){
+	~midiStates.vTrueState.keysValuesDo{|sym, val| v[sym] = val};
+	}{
+	~midiStates.vFalseState.keysValuesDo{|sym, val| v[sym] = val};
+	};
+	v.startSynths(v.numBands);
+	},*/
+	14: {
+		~midiStates.vLfoIndex = (~midiStates.vLfoIndex + 1).clip(0,4);
+		v.setAllSynths(\lfoSpeed, ~midiStates.lfoSpeeds[~midiStates.vLfoIndex]);
+	},
+	15: {
+		~midiStates.vLfoIndex = (~midiStates.vLfoIndex - 1).clip(0,4);
+		v.setAllSynths(\lfoSpeed, ~midiStates.lfoSpeeds[~midiStates.vLfoIndex]);
 	},
 	20: {
 		~midiStates.qSynthListIndex = (~midiStates.qSynthListIndex + 1).clip(0, 5);
@@ -48,7 +73,25 @@ if(MIDIClient.initialized.not){
 		~midiStates.qFreeze = ~midiStates.qFreeze.not;
 		("FREEZE Q " ++ (~midiStates.qFreeze.asString)).postln;
 		q.loopSynth.set(\freeze, ~midiStates.qFreeze.asInteger);
-	}
+		{~loopST2Button.valueAction = ~midiStates.qFreeze.asInteger}.defer;
+	},
+	/*	23: {
+	~midiStates.qSwitchState = ~midiStates.qSwitchState.not;
+	if(~midiStates.qSwitchState){
+	~midiStates.qTrueState.keysValuesDo{|sym, val| q[sym] = val};
+	}{
+	~midiStates.qFalseState.keysValuesDo{|sym, val| q[sym] = val};
+	};
+	q.startSynths(q.numBands);
+	},*/
+	24: {
+		~midiStates.qLfoIndex = (~midiStates.qLfoIndex + 1).clip(0,4);
+		q.setAllSynths(\lfoSpeed, ~midiStates.lfoSpeeds[~midiStates.qLfoIndex]);
+	},
+	25: {
+		~midiStates.qLfoIndex = (~midiStates.qLfoIndex - 1).clip(0,4);
+		q.setAllSynths(\lfoSpeed, ~midiStates.lfoSpeeds[~midiStates.qLfoIndex]);
+	},
 );
 MIDIdef.program(\cue, {|val|
 	/*if(~midiStates.prevVal == 3 && val == 0){
@@ -62,8 +105,7 @@ MIDIdef.program(\cue, {|val|
 MIDIdef.cc(\mbSelectV, {|val| v.loopSynth.set(\mbSelect, val / 127)}, 1);
 MIDIdef.cc(\mbSelectQ, {|val| q.loopSynth.set(\mbSelect, val / 127)}, 10);
 
-MIDIdef.cc(\randomiseV, {|val|
-	val = val.linlin(0, 127, 0, ~maxBands - 1).asInteger;
+~vPulseFunc = { |val|
 	if(val > ~midiStates.vlastRand){
 		// neue randomisieren
 		(~midiStates.vlastRand..val).do {|i|
@@ -79,10 +121,14 @@ MIDIdef.cc(\randomiseV, {|val|
 		}
 	};
 	~midiStates.vlastRand = val
+};
+
+MIDIdef.cc(\randomiseV, {|val|
+	val = val.linlin(0, 127, 0, ~maxBands - 1).asInteger;
+	~vPulseFunc.(val);
 }, 2);
 
-MIDIdef.cc(\randomiseQ, {|val|
-	val = val.linlin(0, 127, 0, ~maxBands - 1).asInteger;
+~qPulseFunc = { |val|
 	if(val > ~midiStates.qlastRand){
 		(~midiStates.qlastRand..val).do {|i|
 			q.synthArray[q.randomOrder[i]].set(\pulseOn, 1)
@@ -94,18 +140,40 @@ MIDIdef.cc(\randomiseQ, {|val|
 		}
 	};
 	~midiStates.qlastRand = val
+};
+
+MIDIdef.cc(\randomiseQ, {|val|
+	val = val.linlin(0, 127, 0, ~maxBands - 1).asInteger;
+	~qPulseFunc.(val);
 }, 11);
+
+MIDIdef.cc(\ampThreshV, {|val| v.setAllSynths(\ampThresh, val.lincurve(0, 127, 0,0.3,8))}, 3);
+MIDIdef.cc(\ampThreshQ, {|val| q.setAllSynths(\ampThresh, val.lincurve(0, 127, 0,0.3,8))}, 12);
+MIDIdef.cc(\relV, {|val| v.setAllSynths(\rel, val.lincurve(0, 127, 0.03,5,3))}, 4);
+MIDIdef.cc(\relQ, {|val| q.setAllSynths(\rel, val.lincurve(0, 127, 0.03,5,3))}, 13);
 
 MIDIdef.cc(\opacity, {|val|
 	~gui !? {
 		{
+			// hier muessen noch die richtigen colors uebernommen werden (red blue)
+			// vielleicht leichter mit hsv zu loesen?
 			~gui.voiceView.background = Color.gray(val.linlin(63.5,127, 1, 0), 1);
 			~gui.electronicsView.fillColor = Color.gray(val.linlin(0,63.5, 1, 0), 1);
-			/*			~gui.voiceView.background = Color.gray(val.linlin(0,63.5, 0, 1), 1);
-			~gui.electronicsView.fillColor = Color.gray(val.linlin(63.5,127, 0, 1), 1);*/
+
+			~gui.voiceView2.background = Color.gray(val.linlin(63.5,127, 1, 0), 1);
+			~gui.electronicsView2.fillColor = Color.gray(val.linlin(0,63.5, 1, 0), 1);
 		}.defer
 	}
 }, 20);
+MIDIdef.cc(\windowAlpha, {|val|
+	~gui !? {
+		{
+			val = val / 127;
+			~gui.win.alpha = 1 - val;
+			~gui.win2.alpha = val;
+		}.defer
+	}
+}, 21);
 /*
 
 ~nanoActions = (

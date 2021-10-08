@@ -1,5 +1,6 @@
 ~makeEv = { |freqMult = 1|
 	(
+		freqMult: freqMult,
 		minFreq: 880,
 		maxFreq: 7000,
 		numBands: 10,
@@ -15,31 +16,33 @@
 			var freqMel = (self.stepMel * (i +1)) + self.lowMel;
 			((freqMel/ 1127.01048).exp - 1 ) * 700;
 		},
-		synthParams: (rel: 0.05, ampThresh: 0.0005),
+		synthParams: (rel: 0.05, ampThresh: 0.0005, lfoSpeed: 1),
 		setAllSynths: {|self, param, val|
-			self.numBands.do {|i|
-				self.synthArray[i].set(param, val)
-			};
+			self.synthGroup.set(param, val);
 			self.synthParams[param] = val
 		},
 		synthArray: Array.newClear(150), // numBands
 		startSynths: { |self, numBands = 10|
 			var ampThreshFactor = 10 / numBands;
+			var ampFactor = numBands.linlin(10,120,1,2);
 			self.numBands = numBands;
 			self.analyseSynth.set(\numBands, numBands);
+			self.analyseSynth.set(\minFreq, self.minFreq);
+			self.analyseSynth.set(\maxFreq, self.maxFreq);
 			self.calcMelValues;
 			if(self.lastNumBands.isNil){
 				self.numBands.do{ |i|
 					self.synthArray[i] = Synth(\sine, [
 						\busIndex, self.loopBus.index + i,
 						\visBusIndex, self.visBus.index + i,
-						//\freqScaleBus, ~bitwigPulseBusses[0],
+						\lfoSpeed, self.synthParams.lfoSpeed,
 						\pulseOn, 0,
 						\pulseSpeed, [5, 7, 11].choose,
 						\pulseLow, [0.5, 1].choose,
 						\pulseHi, [1, 2].choose,
-						\freq, self.freqAtStep(i) * freqMult,
+						\freq, self.freqAtStep(i) * self.freqMult,
 						\ampThreshFactor, ampThreshFactor,
+						\ampFactor, ampFactor,
 						\out, self.outChn,
 						\rel, self.synthParams.rel,
 						\ampThresh, self.synthParams.ampThresh
@@ -49,33 +52,42 @@
 				if(self.lastNumBands > self.numBands){
 					self.synthArray[self.numBands..].do {|syn| syn.free };
 					self.numBands.do{ |i|
-						self.synthArray[i].set(\freq, self.freqAtStep(i) * freqMult);
+						self.synthArray[i].set(\freq, self.freqAtStep(i) * self.freqMult);
 						self.synthArray[i].set(\ampThreshFactor, ampThreshFactor);
+						self.synthArray[i].set(\ampFactor, ampFactor);
 					};
 				}; // wenn sie gleich sind soll nichts passieren!
 				if(self.lastNumBands < self.numBands){
 					//update running
 					self.lastNumBands.do {|i|
-						self.synthArray[i].set(\freq, self.freqAtStep(i) * freqMult);
+						self.synthArray[i].set(\freq, self.freqAtStep(i) * self.freqMult);
 						self.synthArray[i].set(\ampThreshFactor, ampThreshFactor);
+						self.synthArray[i].set(\ampFactor, ampFactor);
 					};
 					//start new
 					(self.lastNumBands .. (self.numBands - 1)).do {|i|
 						self.synthArray[i] = Synth(\sine, [
 							\busIndex, self.loopBus.index + i,
 							\visBusIndex, self.visBus.index + i,
-							//\freqScaleBus, ~bitwigPulseBusses[0],
+							\lfoSpeed, self.synthParams.lfoSpeed,
 							\pulseOn, 0,
 							\pulseSpeed, [5, 7, 11].choose,
 							\pulseLow, [0.5, 1].choose,
 							\pulseHi, [1, 2].choose,
-							\freq, self.freqAtStep(i) * freqMult,
+							\freq, self.freqAtStep(i) * self.freqMult,
 							\ampThreshFactor, ampThreshFactor,
+							\ampFactor, ampFactor,
 							\out, self.outChn,
 							\rel, self.synthParams.rel,
 							\ampThresh, self.synthParams.ampThresh
 						], self.synthGroup)
 					}
+				};
+				// wenn sie gleich sind nur freq updaten
+				if(self.lastNumBands == self.numBands){
+					self.numBands.do{ |i|
+						self.synthArray[i].set(\freq, self.freqAtStep(i) * self.freqMult);
+					};
 				};
 			};
 
@@ -109,7 +121,10 @@
 				\phaseBus, self.phaseBus,
 				\melBuf, self.melBuf,
 				\loopBus, self.loopBus,
-				\controlIn, controlIn
+				\controlLoopBuf, ~sine,
+				\loopSpeed, 1/8,
+				\loopStart, -400
+				//\controlIn, controlIn
 			], self.loopGroup);
 		}
 	)

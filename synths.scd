@@ -13,7 +13,7 @@ SynthDef(\analyseSynth, {
 	0
 }).add;
 
-SynthDef(\loopSynth, {
+/*SynthDef(\loopSynth, {
 	var orig = In.kr(\melBus.ir(), ~maxBands);
 	var phase = In.ar(\phaseBus.ir(), 1);
 	var bitwigDC = A2K.kr(SoundIn.ar(\controlIn.ir())); //(LFTri.kr(0.35).range(0, -400) + (LFNoise1.kr(0.25).range(0, 100) * \noiseAmt.kr(0)))
@@ -21,6 +21,20 @@ SynthDef(\loopSynth, {
 		~maxBands,
 		\melBuf.ir(),
 		Gate.ar(phase,1 - \freeze.kr(0)) + LinLin.kr(bitwigDC,-1,1,-400,0)
+	);
+	var mix = SelectX.kr(\mbSelect.kr(0),[orig, loop]);
+	Out.kr(\loopBus.ir(), mix);
+	0
+}).add;*/
+
+SynthDef(\loopSynth, {
+	var orig = In.kr(\melBus.ir(), ~maxBands);
+	var phase = In.ar(\phaseBus.ir(), 1);
+	var controlSig = PlayBuf.kr(1, \controlLoopBuf.kr(), \loopSpeed.kr(1), loop: 1);
+	var loop = BufRd.kr(
+		~maxBands,
+		\melBuf.ir(),
+		Gate.ar(phase,1 - \freeze.kr(0)) + LinLin.kr(controlSig,0,1,\loopStart.kr(-400),0)
 	);
 	var mix = SelectX.kr(\mbSelect.kr(0),[orig, loop]);
 	Out.kr(\loopBus.ir(), mix);
@@ -33,7 +47,7 @@ SynthDef(\sine, {
 	//SoundIn.ar(\freqScaleBus.kr()) + 1;
 	var amp = In.kr(\busIndex.ir(), 1);
 	var modAmp = LagUD.kr(
-		amp * (amp > (\ampThresh.kr(0.0005) * \ampThreshFactor.kr(1))),
+		amp * (amp > (\ampThresh.kr(0.0005) * \ampThreshFactor.kr(1))) * \ampFactor.kr(1),
 		(2.pow(10) / 2) * SampleDur.ir, \rel.kr(0.05)
 	);
 	var pulseSelect = Select.kr(\pulseOn.kr(1), [DC.kr(1), freqScale]);
