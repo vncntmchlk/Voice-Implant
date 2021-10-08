@@ -23,9 +23,31 @@ if(MIDIClient.initialized.not){
 	cue: 0
 );
 
+~freezeV = { |onOff|
+	if(onOff.isNil){
+		~midiStates.vFreeze = ~midiStates.vFreeze.not;
+	}{
+		~midiStates.vFreeze = onOff
+	};
+	("FREEZE V " ++ (~midiStates.vFreeze.asString)).postln;
+	v.loopSynth.set(\freeze, ~midiStates.vFreeze.asInteger);
+	{~loopST1Button.valueAction = ~midiStates.vFreeze.asInteger}.defer;
+};
+
+~freezeQ = { |onOff|
+	if(onOff.isNil){
+		~midiStates.qFreeze = ~midiStates.qFreeze.not;
+	}{
+		~midiStates.qFreeze = onOff
+	};
+	("FREEZE Q " ++ (~midiStates.qFreeze.asString)).postln;
+	q.loopSynth.set(\freeze, ~midiStates.qFreeze.asInteger);
+	{~loopST2Button.valueAction = ~midiStates.qFreeze.asInteger}.defer;
+};
+
 ~cueActions = (
-	1: {~midiStates.cue = (~midiStates.cue - 1).clip(0,20); ~cuesList[~midiStates.cue].value;
-		{~cueText.string = "CUE: " ++ (~midiStates.cue + 1)}.defer;
+	1: {~midiStates.cue = (~midiStates.cue - 1).clip(0,20); ~cuesList_reverse[~midiStates.cue].value;
+		{~cueText.string = "CUE (reverse): " ++ (~midiStates.cue + 1)}.defer;
 	},
 	2: {~midiStates.cue = (~midiStates.cue + 1).clip(0,20); ~cuesList[~midiStates.cue].value;
 		{~cueText.string = "CUE: " ++ (~midiStates.cue + 1)}.defer;
@@ -38,12 +60,7 @@ if(MIDIClient.initialized.not){
 		~midiStates.vSynthListIndex = (~midiStates.vSynthListIndex - 1).clip(0, 5);
 		v.startSynths(~midiStates.vSynthNumList[~midiStates.vSynthListIndex])
 	},
-	12: {
-		~midiStates.vFreeze = ~midiStates.vFreeze.not;
-		("FREEZE V " ++ (~midiStates.vFreeze.asString)).postln;
-		v.loopSynth.set(\freeze, ~midiStates.vFreeze.asInteger);
-		{~loopST1Button.valueAction = ~midiStates.vFreeze.asInteger}.defer;
-	},
+	12: {~freezeV.()},
 	/*	13: {
 	~midiStates.vSwitchState = ~midiStates.vSwitchState.not;
 	if(~midiStates.vSwitchState){
@@ -69,12 +86,7 @@ if(MIDIClient.initialized.not){
 		~midiStates.qSynthListIndex = (~midiStates.qSynthListIndex - 1).clip(0, 5);
 		q.startSynths(~midiStates.qSynthNumList[~midiStates.qSynthListIndex])
 	},
-	22: {
-		~midiStates.qFreeze = ~midiStates.qFreeze.not;
-		("FREEZE Q " ++ (~midiStates.qFreeze.asString)).postln;
-		q.loopSynth.set(\freeze, ~midiStates.qFreeze.asInteger);
-		{~loopST2Button.valueAction = ~midiStates.qFreeze.asInteger}.defer;
-	},
+	22: {~freezeQ.()},
 	/*	23: {
 	~midiStates.qSwitchState = ~midiStates.qSwitchState.not;
 	if(~midiStates.qSwitchState){

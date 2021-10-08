@@ -122,8 +122,8 @@
 				\melBuf, self.melBuf,
 				\loopBus, self.loopBus,
 				\controlLoopBuf, ~sine,
-				\loopSpeed, 1/8,
-				\loopStart, -400
+				\loopSpeed, 1/6,
+				\loopStart, -600
 				//\controlIn, controlIn
 			], self.loopGroup);
 		}

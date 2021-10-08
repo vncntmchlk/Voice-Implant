@@ -1,4 +1,5 @@
 ~cuesList = Order.new(size: 20);
+~cuesList_reverse = Order.new(size: 20);
 ~cuesList[0] = { // resetting to start configuration (cue 1)
 	{
 		v.startSynths(10);
@@ -17,18 +18,36 @@
 		v.setAllSynths(\ampThresh, 0.0005);
 		q.setAllSynths(\ampThresh, 0.0005);
 		// no loop
-		v.loopSynth.set(\freeze, 0);
-		~midiStates.vFreeze = false;
-		q.loopSynth.set(\freeze, 0);
-		~midiStates.qFreeze = false;
-		{~loopST1Button.valueAction = 0}.defer;
-		{~loopST2Button.valueAction = 0}.defer;
+		~freezeV.(false);
+		~freezeQ.(false);
+	}.fork
+};
+
+~cuesList_reverse[0] = {
+	{
+		v.startSynths(10);
+		q.startSynths(10);
+		s.sync;
+		// no pulses
+		~vPulseFunc.(0);
+		~qPulseFunc.(0);
+		// no looping stuff
+		v.loopSynth.set(\mbSelect, 0);
+		q.loopSynth.set(\mbSelect, 0);
+		// short release
+		v.setAllSynths(\rel, 0.03);
+		q.setAllSynths(\rel, 0.03);
+		// low ampthresh
+		v.setAllSynths(\ampThresh, 0.0005);
+		q.setAllSynths(\ampThresh, 0.0005);
+		// no loop
+		~freezeV.(false);
+		~freezeQ.(false);
 	}.fork
 };
 ~cuesList[1] = { // Loop st 1
-	v.loopSynth.set(\freeze, 1);
-	~midiStates.vFreeze = true;
-	{~loopST1Button.valueAction = 1}.defer;
+	~freezeV.(true);
+	~freezeQ.(true);
 	{
 		q.startSynths(40);
 		s.sync;
@@ -43,9 +62,8 @@
 		s.sync;
 		~vPulseFunc.(pulses);
 		v.loopSynth.set(\mbSelect, 0.5);
-		v.loopSynth.set(\freeze, 0);
-		~midiStates.vFreeze = false;
-		{~loopST1Button.valueAction = 0}.defer;
+		~freezeV.(false);
+		~freezeQ.(false);
 	}.fork
 };
 ~cuesList[3] = {
@@ -67,7 +85,7 @@
 		~vPulseFunc.(pulses);
 		v.loopSynth.set(\mbSelect, 0.1);
 		q.loopSynth.set(\mbSelect, 0.7);
-		{q.loopSynth.set(\loopSpeed, 1/6)}.defer(5);
+		q.loopSynth.set(\loopSpeed, 1/6);
 	}.fork
 };
 ~cuesList[5] = {
@@ -77,7 +95,7 @@
 		s.sync;
 		~vPulseFunc.(pulses);
 		v.loopSynth.set(\mbSelect, 0);
-		{q.loopSynth.set(\loopSpeed, 1/4)}.defer(5);
+		q.loopSynth.set(\loopSpeed, 1/4);
 	}.fork
 };
 
@@ -89,23 +107,25 @@
 		s.sync;
 		~vPulseFunc.(pulses);
 		q.setAllSynths(\rel, 0.01);
-		{q.loopSynth.set(\loopSpeed, 1/2); q.loopSynth.set(\controlLoopBuf, ~slowFine[0])}.defer(5);
+		q.loopSynth.set(\loopSpeed, 1/2); q.loopSynth.set(\controlLoopBuf, ~slowFine[0]);
 	}.fork
 };
 
 ~cuesList[7] = {
 	{
 		~vPulseFunc.(0);
-		{q.loopSynth.set(\loopSpeed, 1); q.loopSynth.set(\controlLoopBuf, ~slowFine[1])}.defer(5);
+		q.loopSynth.set(\loopSpeed, 1); q.loopSynth.set(\controlLoopBuf, ~slowFine[1]);
 	}.fork
 };
 
+~cuesList_reverse[7] = {
+	~freezeV.(false);
+	~freezeQ.(false);
+};
 ~cuesList[8] = {
 	{
-		v.loopSynth.set(\freeze, 1);
-		~midiStates.vFreeze = true;
-		q.loopSynth.set(\freeze, 1);
-		~midiStates.qFreeze = true;
+		~freezeV.(true);
+		~freezeQ.(true);
 		{~loopST1Button.valueAction = 1}.defer;
 		{~loopST2Button.valueAction = 1}.defer;
 		v.loopSynth.set(\mbSelect, 0.5);
@@ -189,14 +209,16 @@
 	v.loopSynth.set(\controlLoopBuf, ~slowRough[0]);
 };
 
+~cuesList_reverse[17] = {
+	~freezeV.(false);
+	~freezeQ.(false);
+};
 ~cuesList[18] = {
 	v.startSynths(10);
 	q.loopSynth.set(\loopSpeed, 1/2);
 	q.loopSynth.set(\controlLoopBuf, ~slowFine[2]);
 	v.loopSynth.set(\loopSpeed, 1/2);
 	v.loopSynth.set(\controlLoopBuf, ~slowRough[1]);
-	v.loopSynth.set(\freeze, 1);
-	~midiStates.vFreeze = true;
-	q.loopSynth.set(\freeze, 1);
-	~midiStates.qFreeze = true;
+	~freezeV.(true);
+	~freezeQ.(true);
 };
