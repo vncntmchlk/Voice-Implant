@@ -1,7 +1,10 @@
+// -50.dbamp = 0.003
+
 SynthDef(\analyseSynth, {
 	var source = SoundIn.ar(\input.ir(12)),
+	sourceAmp = Amplitude.ar(source,0.003,0.003),
 	kRate = 1 / ControlRate.ir,
-	phase = Phasor.ar(0, kRate, 0, ControlRate.ir * 120),
+	phase = Phasor.ar(0, kRate * (sourceAmp > 0.003), 0, ControlRate.ir * 120),
 	mb = FluidMelBands.kr(source,
 		numBands: \numBands.kr(10),
 		minFreq: \minFreq.kr(880),
@@ -31,7 +34,7 @@ SynthDef(\loopSynth, {
 	var orig = In.kr(\melBus.ir(), ~maxBands);
 	var phase = In.ar(\phaseBus.ir(), 1);
 	var controlSig = PlayBuf.kr(1, \controlLoopBuf.kr(), \loopSpeed.kr(1), loop: 1);
-	var loopStartLfo = SinOsc.kr(1/4).range(-150,0);
+	var loopStartLfo = SinOsc.kr(1/4.25).range(\loopStartLfoAmt.kr(-50),0);
 	var loop = BufRd.kr(
 		~maxBands,
 		\melBuf.ir(),

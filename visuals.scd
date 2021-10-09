@@ -57,7 +57,7 @@
 
 
 
-~gui.winRange = 0.75;
+~gui.winRange = 0.05;
 ~gui.frameRate = (1/25) * 0.5;
 ~gui.updateWindow = Routine {
 	{

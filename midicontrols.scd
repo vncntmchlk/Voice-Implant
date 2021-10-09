@@ -46,10 +46,10 @@ if(MIDIClient.initialized.not){
 };
 
 ~cueActions = (
-	1: {~midiStates.cue = (~midiStates.cue - 1).clip(0,20); ~cuesList_reverse[~midiStates.cue].value;
+	1: {~midiStates.cue = (~midiStates.cue - 1).clip(0,25); ~cuesList_reverse[~midiStates.cue].value;
 		{~cueText.string = "CUE (reverse): " ++ (~midiStates.cue + 1)}.defer;
 	},
-	2: {~midiStates.cue = (~midiStates.cue + 1).clip(0,20); ~cuesList[~midiStates.cue].value;
+	2: {~midiStates.cue = (~midiStates.cue + 1).clip(0,25); ~cuesList[~midiStates.cue].value;
 		{~cueText.string = "CUE: " ++ (~midiStates.cue + 1)}.defer;
 	},
 	10: {

@@ -63,7 +63,8 @@ maxFreq: 7000,
 freqMult: 2
 minFreq: 250,
 maxFreq: 880,
-
+v.freqMult = 1
+v.startSynths(28)
 q.setAllSynths(\rel,4)
 q.startSynths(10)
 q.freqMult = 2;
